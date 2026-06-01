@@ -10,16 +10,33 @@ let todos = [
 ];
 
 // GET All – Read
-app.get('/todos', (req, res) => {
-  res.status(200).json(todos); // Send array as JSON
+app.get('/todos/:id', (req, res) => {
+  const id = parseInt(req.params.id); // get id from URL
+  const todo = todos.find(t => t.id === id); // find matching todo
+
+  if (todo) {
+    res.status(200).json(todo); // send single todo
+  } else {
+    res.status(404).json({ message: 'Todo not found' });
+  }
 });
+
 
 // POST New – Create
 app.post('/todos', (req, res) => {
-  const newTodo = { id: todos.length + 1, ...req.body }; // Auto-ID
+  const { task } = req.body;
+
+  // Validate that 'task' is provided
+  if (!task || task.trim() === '') {
+    return res.status(400).json({ error: "'task' field is required" });
+  }
+
+  const newTodo = { id: todos.length + 1, task }; // Auto-ID with validated task
   todos.push(newTodo);
-  res.status(201).json(newTodo); // Echo back
+
+  res.status(201).json(newTodo); // Echo back the new todo
 });
+
 
 // PATCH Update – Partial
 app.patch('/todos/:id', (req, res) => {
@@ -39,10 +56,12 @@ app.delete('/todos/:id', (req, res) => {
   res.status(204).send(); // Silent success
 });
 
-app.get('/todos/completed', (req, res) => {
-  const completed = todos.filter((t) => t.completed);
-  res.json(completed); // Custom Read!
+
+app.get('/todos/active', (req, res) => {
+  const active = todos.filter((t) => !t.completed); // filter where completed is false
+  res.json(active); // return active todos
 });
+
 
 app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Server error!' });
